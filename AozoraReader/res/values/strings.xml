@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Aozora Reader</string>
+    <string name="SearchAozora">Search in Aozora Bunko</string>
+<string name="menu_update">Update</string>
+<string name="menu_index">作家インデックスを表示する</string>
+</resources>

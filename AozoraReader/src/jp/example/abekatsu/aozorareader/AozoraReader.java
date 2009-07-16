@@ -77,6 +77,7 @@ public class AozoraReader extends ListActivity {
 		i.putExtra(AozoraBunkoViewer.KEY_LOCATION, location);
 		i.putExtra(AozoraBunkoViewer.KEY_AUTHORNAME, authorName);
 		i.putExtra(AozoraBunkoViewer.KEY_WORKSNAME, worksName);
+		i.putExtra(AozoraBunkoViewer.KEY_BOOKMARKED, true);
 		
 		startActivity(i);
 		

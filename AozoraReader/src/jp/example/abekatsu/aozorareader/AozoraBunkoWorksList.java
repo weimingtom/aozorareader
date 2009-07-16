@@ -20,7 +20,7 @@ public class AozoraBunkoWorksList extends ListActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.works_list);
-
+		
 		// Pick Up bundle.
 		Bundle extras = getIntent().getExtras();
 		if (extras != null) {
@@ -73,7 +73,7 @@ public class AozoraBunkoWorksList extends ListActivity {
 		
 		long worksId = c.getLong(1);
 		String title = c.getString(2);
-		String location = null;
+		String location = c.getString(3);
 		
 		c.close();
 		
@@ -83,6 +83,7 @@ public class AozoraBunkoWorksList extends ListActivity {
 		i.putExtra(AozoraBunkoViewer.KEY_WORKSID, worksId);
 		i.putExtra(AozoraBunkoViewer.KEY_WORKSNAME , title);
 		i.putExtra(AozoraBunkoViewer.KEY_LOCATION, location);
+		i.putExtra(AozoraBunkoViewer.KEY_BOOKMARKED, false);
 		
 		startActivity(i);
 	}

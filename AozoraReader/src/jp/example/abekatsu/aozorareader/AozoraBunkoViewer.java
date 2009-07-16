@@ -21,6 +21,7 @@ public class AozoraBunkoViewer extends Activity {
 	public static final String KEY_LOCATION = "Viewer_Location";
 	public static final String KEY_AUTHORNAME = "Viewer_AUTHORNAME";
 	public static final String KEY_WORKSNAME = "Viewer_WORKSNAME";
+	public static final String KEY_BOOKMARKED = "Viewer_BOOKMARKED";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -34,20 +35,17 @@ public class AozoraBunkoViewer extends Activity {
 		if (extras != null) {
 			authorId = extras.getLong(AozoraBunkoViewer.KEY_AUTHORID);
 			worksId  = extras.getLong(AozoraBunkoViewer.KEY_WORKSID);
-			authorName = extras.getString(AozoraBunkoViewer.KEY_AUTHORNAME);
+			authorName = extras.getString (AozoraBunkoViewer.KEY_AUTHORNAME);
 			worksName  = extras.getString(AozoraBunkoViewer.KEY_WORKSNAME);
 				
-			String xhtmlUrl = extras.getString(AozoraBunkoViewer.KEY_LOCATION);
+			boolean bookmarked = extras.getBoolean (AozoraBunkoViewer.KEY_BOOKMARKED);
 
-			if (xhtmlUrl == null) {
-				String cardUrl = String.format("http://www.aozora.gr.jp/cards/%06d/card%d.html",
-						authorId, worksId);
-				String tmpUrl = getXHTMLURLString(cardUrl, authorId, worksId);
-				if (tmpUrl == null) {
-					xhtmlUrl = cardUrl;
-				} else {
-					xhtmlUrl = tmpUrl;
-				}
+			String xhtmlUrl;
+			if (bookmarked == true) {
+				xhtmlUrl = extras.getString(AozoraBunkoViewer.KEY_LOCATION); 
+			} else {
+				String location = "http://www.aozora.gr.jp/cards/" + extras.getString(AozoraBunkoViewer.KEY_LOCATION);
+				xhtmlUrl = getXHTMLURLString(location, authorId, worksId);
 				AozoraReaderBookmarksDbAdapter mDbAdapter = new AozoraReaderBookmarksDbAdapter(this);
 				mDbAdapter.open();
 				mDbAdapter.insertInfo(authorName, authorId, worksName, worksId, xhtmlUrl);
@@ -102,9 +100,13 @@ public class AozoraBunkoViewer extends Activity {
 				Matcher xhtml_matcher = xhtml_pattern.matcher(line);
 				if (xhtml_matcher.find()) {
 					String xhtmlLoc = xhtml_matcher.group(1);
-					retStr = new String();
-					retStr = String.format("http://www.aozora.gr.jp/cards/%06d/%s",
-							authorId, xhtmlLoc);
+					Pattern card_pattern = Pattern.compile("(http://www.aozora.gr.jp/cards/\\d+)/card\\d+\\.html");
+					Matcher card_matcher = card_pattern.matcher(urlStr);
+					if (card_matcher.find()) {
+						String base_card = card_matcher.group(1);
+						retStr = new String();
+						retStr = String.format("%s/%s", base_card, xhtmlLoc);
+					}
 				}
 			}
 			reader.close();
@@ -117,6 +119,11 @@ public class AozoraBunkoViewer extends Activity {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		if (retStr == null) {
+			retStr = urlStr;
+		}
+		
 		return retStr;
 	}
 }

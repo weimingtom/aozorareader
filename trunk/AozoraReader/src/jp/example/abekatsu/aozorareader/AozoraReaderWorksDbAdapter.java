@@ -29,7 +29,8 @@ public class AozoraReaderWorksDbAdapter {
 	public static final String KEY_AUTHORID  = "authors_id";
 	public static final String KEY_WORKSNAME = "works_name";
 	public static final String KEY_KANAZUKAI = "kanazukai";
-
+	public static final String KEY_LOCATION  = "location";
+	
 	private static final String DATABASE_NAME  = "works.db";
 	private static final String DATABASE_TABLE = "works";
 	private static final String TAG = "AozoraReaderWorksDbAdapter";
@@ -42,7 +43,8 @@ public class AozoraReaderWorksDbAdapter {
 	        + KEY_WORKSID     + " INTEGER, "
 	        + KEY_AUTHORID    + " INTEGER, "
 	        + KEY_WORKSNAME   + " TEXT NOT NULL, "
-	        + KEY_KANAZUKAI   + " INTEGER"
+	        + KEY_KANAZUKAI   + " INTEGER, "
+	        + KEY_LOCATION    + " TEXT"
 	        + ");";
 
 		public WorksDatabaseHelper(Context context) {
@@ -127,14 +129,16 @@ public class AozoraReaderWorksDbAdapter {
 			 * <li><a href="../cards/000035/card1578.html">愛と美について</a>　（新字新仮名、作品ID：1578）　</li> 
 			 * <li><a href="../cards/000035/card46597.html">青森</a>　（新字新仮名、作品ID：46597）　</li>
 			 */ 
-			Pattern works_pattern = Pattern.compile("<li><a href=\"\\.\\./cards/\\d+/card(\\d+)\\.html\">(.+)</a>.*（(.+)、作品ID：\\d+）.*</li>");
+			Pattern works_pattern = Pattern.compile("<li><a href=\"\\.\\./cards/(\\d+)/card(\\d+)\\.html\">(.+)</a>.*（(.+)、作品ID：\\d+）.*</li>");
 			while ((line = reader.readLine()) != null) {
 				Matcher works_matcher = works_pattern.matcher(line);
 				if (works_matcher.find()) {
-					int works_id = Integer.parseInt(works_matcher.group(1));
-					String works_title = works_matcher.group(2);
-					String kanazukai = works_matcher.group(3); /* その他，旧字旧仮名，新字旧仮名，新字新仮名，*/
-					insertWorks(authorId, works_id, works_title, kanazukai);
+					String author_id_str = works_matcher.group(1);
+					int works_id = Integer.parseInt(works_matcher.group(2));
+					String works_title = works_matcher.group(3);
+					String kanazukai = works_matcher.group(4); /* その他，旧字旧仮名，新字旧仮名，新字新仮名，*/
+					String location = author_id_str + "/" + "card" + works_id + ".html";
+					insertWorks(authorId, works_id, works_title, kanazukai, location);
 				}
 			}
 			reader.close();
@@ -158,10 +162,11 @@ public class AozoraReaderWorksDbAdapter {
 		createWorksDB(searchUrl, authorId);
 	}
 
-    private void insertWorks(long authorId, long worksId, String worksTitle, String kanazukai) {
+    private void insertWorks(long authorId, long worksId, String worksTitle, String kanazukai, String location) {
     	int kanazukaiId;
     	SQLiteDatabase db = mDbHelper.getWritableDatabase();
     	Log.i(TAG, "Works ID " + worksId+ " Title " + worksTitle + " Kanazukai " + kanazukai);
+    	Log.i(TAG, "Loc " + location);
     	
     	if (worksInfoExist(authorId, worksId, db) == true) {
     		return; // Here is duplication check. Since works Id is guaranteed as uniquely, so nothing to do is here.
@@ -179,11 +184,12 @@ public class AozoraReaderWorksDbAdapter {
 
     	db.beginTransaction();
     	try {
-    		SQLiteStatement stmt = db.compileStatement("insert into " + DATABASE_TABLE + " values (NULL, ?, ?, ?, ?);");
+    		SQLiteStatement stmt = db.compileStatement("insert into " + DATABASE_TABLE + " values (NULL, ?, ?, ?, ?, ?);");
     		stmt.bindLong(1, worksId);
     		stmt.bindLong(2, authorId);
     		stmt.bindString(3, worksTitle);
     		stmt.bindLong(4, kanazukaiId);
+    		stmt.bindString(5, location);
     		stmt.executeInsert();
     		db.setTransactionSuccessful();
     	} catch (SQLException e) {
@@ -218,7 +224,7 @@ public class AozoraReaderWorksDbAdapter {
 		String whereSt = KEY_AUTHORID + " = " + authorId;
 
 		Cursor mCursor = db.query(true, DATABASE_TABLE, 
-            			new String[] {KEY_ROWID, KEY_WORKSNAME, KEY_KANAZUKAI},
+            			new String[] {KEY_ROWID, KEY_WORKSNAME, KEY_KANAZUKAI, KEY_LOCATION},
             			whereSt, null, null, null, null, null);
 		
     	return mCursor;
@@ -243,7 +249,7 @@ public class AozoraReaderWorksDbAdapter {
 	public Cursor fetchWorksInfoFromPosition(long position, long authorId) {
 		SQLiteDatabase db = this.mDbHelper.getReadableDatabase();
 		Cursor mCursor = db.query(true, DATABASE_TABLE, 
-    			new String[] {KEY_ROWID, KEY_WORKSID, KEY_WORKSNAME},
+    			new String[] {KEY_ROWID, KEY_WORKSID, KEY_WORKSNAME, KEY_LOCATION},
     			KEY_AUTHORID + " = " + authorId,
     			null, null, null, null, null);
 		mCursor.moveToPosition((int) position);
